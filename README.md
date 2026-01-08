@@ -8,10 +8,10 @@ World of Warcraft addon that plays oxygen warning sounds while underwater.
 - Simple slash command for testing.
 
 ## Installation
-1) Copy the `Subnautica` folder into your WoW AddOns directory:
+1) Copy the `SubnauticaOxygenAlerts` folder into your WoW AddOns directory:
    - Retail: `World of Warcraft/_retail_/Interface/AddOns/`
    - Classic: `World of Warcraft/_classic_/Interface/AddOns/`
-2) Ensure `Subnautica` is enabled on the character select AddOns list.
+2) Ensure `Subnautica Oxygen Alerts` is enabled on the character select AddOns list.
 3) Reload the UI (`/reload`) if the game is already running.
 
 ## Usage
@@ -32,3 +32,5 @@ or sound files.
 ## Credits
 Author: Nightbert
 Subnautica sound assets are owned by Unknown Worlds Entertainment.
+
+Addon on Curseforge: https://www.curseforge.com/wow/addons/subnautica-oxygen-alerts
