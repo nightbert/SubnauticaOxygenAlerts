@@ -1,0 +1,8 @@
+## Interface: 11508, 20505, 50503
+## Title: Subnautica Oxygen Alerts
+## Notes: Plays oxygen warning sounds while underwater.
+## Author: Nightbert
+## Version: 1.1.0
+## SavedVariables: SubnauticaOxygenAlertsDB
+
+SubnauticaOxygenAlerts.lua

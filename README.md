@@ -5,7 +5,7 @@ World of Warcraft addon that plays oxygen warning sounds while underwater.
 ## Features
 - Plays custom audio at oxygen thresholds (50%, 25%, 10%, 1%).
 - Uses the BREATH mirror timer and updates even if the timer UI is hidden.
-- Simple slash command for testing.
+- Slash commands for testing and configuration.
 
 ## Installation
 1) Copy the `SubnauticaOxygenAlerts` folder into your WoW AddOns directory:
@@ -17,13 +17,16 @@ World of Warcraft addon that plays oxygen warning sounds while underwater.
 ## Usage
 - Dive underwater and the addon will play sounds at the configured thresholds.
 - Sounds are stored in `src/` and are played on the `SFX` channel.
+- Open the config with `/soa config` to change volume and sound channel.
 
 ### Slash Commands
-- `/subnautica test` - Play a test sound.
+- `/soa test` - Play a test sound.
+- `/soa config` (or `/soa settings`) - Open the configuration window.
 
 ## Configuration
-Edit `Subnautica.lua` and adjust `PERCENT_THRESHOLDS` if you want different timings
-or sound files.
+Use `/soa config` to adjust volume and sound channel.
+Edit `SubnauticaOxygenAlerts.lua` and adjust `PERCENT_THRESHOLDS` if you want different
+timings or sound files.
 
 ## Development Notes
 - The addon listens to `MIRROR_TIMER_START/STOP/PAUSE` for the `BREATH` timer.
