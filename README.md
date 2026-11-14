@@ -4,27 +4,32 @@ World of Warcraft addon that plays oxygen warning sounds while underwater.
 
 ## Features
 - Plays custom audio at oxygen thresholds (50%, 25%, 10%, 1%).
+- At the halfway mark it picks the right line: the "50%" sound when half the
+  breath bar is still more than 30 seconds (extended breath from items or the
+  Undead racial), otherwise the "30 seconds" sound.
 - Uses the BREATH mirror timer and updates even if the timer UI is hidden.
-- Slash commands for testing and configuration.
+- Native options panel under Game Menu > Options > AddOns, with buttons to test
+  each alert sound.
 
 ## Installation
 1) Copy the `SubnauticaOxygenAlerts` folder into your WoW AddOns directory:
-   - Retail: `World of Warcraft/_retail_/Interface/AddOns/`
-   - Classic: `World of Warcraft/_classic_/Interface/AddOns/`
-2) Ensure `Subnautica Oxygen Alerts` is enabled on the character select AddOns list.
+   `/Interface/AddOns/`
+2) Ensure `SubnauticaOxygenAlerts` is enabled on the character select AddOns list.
 3) Reload the UI (`/reload`) if the game is already running.
 
 ## Usage
 - Dive underwater and the addon will play sounds at the configured thresholds.
-- Sounds are stored in `src/` and are played on the `SFX` channel.
-- Open the config with `/soa config` to change volume and sound channel.
+- Sounds are stored in `src/` and are played on the `Dialog` channel by default.
+- Options: Game Menu > Options > AddOns > Subnautica Oxygen Alerts, or `/soa`.
 
 ### Slash Commands
-- `/soa test` - Play a test sound.
-- `/soa config` (or `/soa settings`) - Open the configuration window.
+- `/soa` (or any unknown argument) - Open the options panel.
+- `/soa test` - Play the 50% sound.
+- `/soa test30` - Play the 30 seconds sound.
 
 ## Configuration
-Use `/soa config` to adjust volume and sound channel.
+The options panel holds alert volume, sound channel and the two sound test
+buttons. The addon never writes to chat.
 Edit `SubnauticaOxygenAlerts.lua` and adjust `PERCENT_THRESHOLDS` if you want different
 timings or sound files.
 
@@ -32,8 +37,10 @@ timings or sound files.
 - The addon listens to `MIRROR_TIMER_START/STOP/PAUSE` for the `BREATH` timer.
 - Remaining oxygen is tracked in milliseconds and updated every 0.1s.
 
+## Supported Clients
+Interface versions 16001 (WoW Forever), 11508 (Classic Era), 20505 (TBC Anniversary),
+50503 (Mists of Pandaria Classic).
+
 ## Credits
 Author: Nightbert
 Subnautica sound assets are owned by Unknown Worlds Entertainment.
-
-Addon on Curseforge: https://www.curseforge.com/wow/addons/subnautica-oxygen-alerts

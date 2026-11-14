@@ -4,7 +4,7 @@ local frame
 local SOUND_PATH = "Interface\\AddOns\\" .. addonName .. "\\src\\"
 local DEFAULT_SETTINGS = {
   volume = 1.0,
-  channel = "SFX",
+  channel = "Dialog",
 }
 
 local CHANNEL_OPTIONS = {
@@ -22,10 +22,22 @@ end
 
 local settings
 local configFrame
+local optionsCategory
+local optionsPanelRegistered
 local soundObject
 
+-- Forward declaration: the options panel's test buttons are created before the
+-- sound helper below, and must not fall through to the global PlaySound().
+local PlaySound
+
+local PANEL_TITLE = "Subnautica Oxygen Alerts"
+
+local SOUND_HALF = "oxygen_50.ogg"
+local SOUND_30_SECONDS = "oxygen_30s.ogg"
+local HALF_SOUND_MIN_SECONDS = 30
+
 local PERCENT_THRESHOLDS = {
-  { key = "pct50", value = 0.50, file = "oxygen_50.ogg" },
+  { key = "pct50", value = 0.50, file = SOUND_HALF },
   { key = "pct25", value = 0.25, file = "oxygen_25.ogg" },
   { key = "pct10", value = 0.10, file = "oxygen_10.ogg" },
   { key = "pct01", value = 0.01, file = "oxygen_01.ogg" },
@@ -37,6 +49,7 @@ local state = {
   max = 0,
   scale = -1,
   paused = false,
+  unitsPerSecond = 1000,
   lastRemaining = 0,
   lastUpdateTime = 0,
   ticker = nil,
@@ -220,26 +233,24 @@ local function CreateConfigFrame()
     return configFrame
   end
 
-  local f = CreateFrame("Frame", "SubnauticaOxygenAlertsConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-  f:SetSize(320, 200)
-  f:SetPoint("CENTER")
-  f:SetMovable(true)
-  f:EnableMouse(true)
-  f:RegisterForDrag("LeftButton")
-  f:SetScript("OnDragStart", f.StartMoving)
-  f:SetScript("OnDragStop", f.StopMovingOrSizing)
+  local f = CreateFrame("Frame", "SubnauticaOxygenAlertsConfigFrame", UIParent)
+  f:SetSize(600, 400)
   f:Hide()
+  f.name = PANEL_TITLE
 
-  if UISpecialFrames then
-    table.insert(UISpecialFrames, "SubnauticaOxygenAlertsConfigFrame")
-  end
+  f.title = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+  f.title:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -16)
+  f.title:SetText(PANEL_TITLE)
 
-  f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-  f.title:SetPoint("LEFT", f.TitleBg, "LEFT", 6, 0)
-  f.title:SetText("Subnautica Alerts")
+  local subtitle = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  subtitle:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -8)
+  subtitle:SetWidth(440)
+  subtitle:SetJustifyH("LEFT")
+  subtitle:SetJustifyV("TOP")
+  subtitle:SetText("Plays oxygen warning sounds while the breath bar is running.")
 
   local volumeSlider = CreateVolumeSlider(f)
-  volumeSlider:SetPoint("TOP", f, "TOP", 0, -60)
+  volumeSlider:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", 4, -40)
   volumeSlider:SetWidth(200)
   volumeSlider:SetHeight(17)
   if volumeSlider.SetOrientation then
@@ -256,20 +267,20 @@ local function CreateConfigFrame()
   EnsureSliderBackdrop(volumeSlider)
   HideSliderLabels(volumeSlider)
 
-  local volumeLabel = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-  volumeLabel:SetPoint("BOTTOM", volumeSlider, "TOP", 0, 6)
+  local volumeLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+  volumeLabel:SetPoint("BOTTOMLEFT", volumeSlider, "TOPLEFT", 0, 6)
   volumeLabel:SetText("Alert volume")
 
-  local volumeLowLabel = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  local volumeLowLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   volumeLowLabel:SetPoint("TOPLEFT", volumeSlider, "BOTTOMLEFT", 0, -2)
   volumeLowLabel:SetText("0%")
 
-  local volumeHighLabel = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  local volumeHighLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   volumeHighLabel:SetPoint("TOPRIGHT", volumeSlider, "BOTTOMRIGHT", 0, -2)
   volumeHighLabel:SetText("100%")
 
-  local volumeValue = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  volumeValue:SetPoint("TOP", volumeSlider, "BOTTOM", 0, -18)
+  local volumeValue = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+  volumeValue:SetPoint("LEFT", volumeSlider, "RIGHT", 12, 0)
   volumeValue:SetText("100%")
 
   volumeSlider:SetScript("OnValueChanged", function(_, value)
@@ -280,8 +291,8 @@ local function CreateConfigFrame()
     volumeValue:SetText(rounded .. "%")
   end)
 
-  local channelLabel = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-  channelLabel:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -115)
+  local channelLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+  channelLabel:SetPoint("TOPLEFT", volumeSlider, "BOTTOMLEFT", 0, -34)
   channelLabel:SetText("Sound channel")
 
   local channelDropdown = CreateFrame("Frame", "SubnauticaOxygenAlertsChannelDropdown", f, "UIDropDownMenuTemplate")
@@ -307,21 +318,84 @@ local function CreateConfigFrame()
   UIDropDownMenu_SetWidth(channelDropdown, 140)
   UIDropDownMenu_JustifyText(channelDropdown, "LEFT")
 
+  local testLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+  testLabel:SetPoint("TOPLEFT", channelLabel, "BOTTOMLEFT", 0, -56)
+  testLabel:SetText("Sound test")
+
+  local testHalfButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  testHalfButton:SetSize(150, 24)
+  testHalfButton:SetPoint("TOPLEFT", testLabel, "BOTTOMLEFT", 0, -6)
+  testHalfButton:SetText("Play 50% alert")
+  testHalfButton:SetScript("OnClick", function()
+    PlaySound(SOUND_HALF)
+  end)
+
+  local testThirtyButton = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  testThirtyButton:SetSize(150, 24)
+  testThirtyButton:SetPoint("LEFT", testHalfButton, "RIGHT", 8, 0)
+  testThirtyButton:SetText("Play 30 second alert")
+  testThirtyButton:SetScript("OnClick", function()
+    PlaySound(SOUND_30_SECONDS)
+  end)
+
   f.volumeSlider = volumeSlider
   f.volumeValue = volumeValue
   f.channelDropdown = channelDropdown
 
+  -- Settings canvas hooks (modern clients) / Interface Options (older clients).
+  f.OnRefresh = RefreshConfigFrame
+  f.refresh = RefreshConfigFrame
+  f.OnCommit = function() end
+  f.okay = function() end
+  f.OnDefault = function()
+    if settings then
+      settings.volume = DEFAULT_SETTINGS.volume
+      settings.channel = DEFAULT_SETTINGS.channel
+    end
+    RefreshConfigFrame()
+  end
+  f.default = f.OnDefault
+
   configFrame = f
   return f
+end
+
+local function RegisterOptionsPanel()
+  if optionsCategory or optionsPanelRegistered then
+    return
+  end
+
+  local panel = CreateConfigFrame()
+
+  if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
+    local category = Settings.RegisterCanvasLayoutCategory(panel, PANEL_TITLE)
+    category.ID = PANEL_TITLE
+    Settings.RegisterAddOnCategory(category)
+    optionsCategory = category
+    optionsPanelRegistered = true
+  elseif InterfaceOptions_AddCategory then
+    InterfaceOptions_AddCategory(panel)
+    optionsPanelRegistered = true
+  end
 end
 
 local function OpenConfig()
   if not settings then
     InitializeSettings()
   end
-  local f = CreateConfigFrame()
+  RegisterOptionsPanel()
   RefreshConfigFrame()
-  f:Show()
+
+  if optionsCategory and Settings and Settings.OpenToCategory then
+    Settings.OpenToCategory(optionsCategory:GetID())
+    return
+  end
+
+  if InterfaceOptionsFrame_OpenToCategory and configFrame then
+    -- Classic needs the call twice to actually land on the right panel.
+    InterfaceOptionsFrame_OpenToCategory(configFrame)
+    InterfaceOptionsFrame_OpenToCategory(configFrame)
+  end
 end
 
 local function ComputeRemaining(value, max, scale)
@@ -355,7 +429,7 @@ local function EnsureSoundObject()
   return nil
 end
 
-local function PlaySound(name)
+function PlaySound(name)
   local path = SOUND_PATH .. name
   local channel = GetSettingChannel()
   local volume = GetSettingVolume()
@@ -388,6 +462,26 @@ local function PlaySound(name)
   end
 end
 
+local function ToSeconds(units)
+  local unitsPerSecond = state.unitsPerSecond
+  if type(unitsPerSecond) ~= "number" or unitsPerSecond <= 0 then
+    unitsPerSecond = 1000
+  end
+  return (units or 0) / unitsPerSecond
+end
+
+-- Breath length can be extended (items, Undead racial), so half the bar is not
+-- always the same as 30 seconds. Announce whichever of the two the player gets.
+local function GetThresholdSound(t, threshold)
+  if t.key ~= "pct50" then
+    return t.file
+  end
+  if ToSeconds(threshold) > HALF_SOUND_MIN_SECONDS then
+    return SOUND_HALF
+  end
+  return SOUND_30_SECONDS
+end
+
 local function CheckThresholds(remaining)
   if state.max <= 0 then
     return
@@ -398,7 +492,7 @@ local function CheckThresholds(remaining)
   for _, t in ipairs(PERCENT_THRESHOLDS) do
     local threshold = state.max * t.value
     if not played[t.key] and last > threshold and remaining <= threshold then
-      PlaySound(t.file)
+      PlaySound(GetThresholdSound(t, threshold))
       played[t.key] = true
     end
   end
@@ -425,7 +519,7 @@ local function TickBreathTimer(elapsed)
     return
   end
 
-  state.value = state.value + (delta * 1000 * state.scale)
+  state.value = state.value + (delta * state.unitsPerSecond * state.scale)
 
   if state.scale < 0 and state.value < 0 then
     state.value = 0
@@ -461,6 +555,8 @@ local function StartBreathTimer(value, max, scale, paused)
   state.value = value or 0
   state.max = max or 0
   state.scale = scale or -1
+  -- Mirror timers report milliseconds; stay safe if a client ever uses seconds.
+  state.unitsPerSecond = (state.max > 1000) and 1000 or 1
   state.paused = paused == 1 or paused == true
   state.lastRemaining = ComputeRemaining(state.value, state.max, state.scale)
   state.lastUpdateTime = GetTime()
@@ -480,10 +576,11 @@ local function StopBreathTimer()
 end
 
 local function FindBreathTimer()
-  if not GetMirrorTimerInfo or not MIRRORTIMER_NUMTIMERS then
+  if not GetMirrorTimerInfo then
     return
   end
-  for i = 1, MIRRORTIMER_NUMTIMERS do
+  local numTimers = MIRRORTIMER_NUMTIMERS or 3
+  for i = 1, numTimers do
     local timer, value, maxvalue, scale, paused = GetMirrorTimerInfo(i)
     if timer == "BREATH" then
       StartBreathTimer(value, maxvalue, scale, paused)
@@ -504,6 +601,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
     local name = ...
     if name == addonName then
       InitializeSettings()
+      RegisterOptionsPanel()
     end
     return
   end
@@ -542,13 +640,12 @@ SLASH_SUBNAUTICA1 = "/soa"
 SlashCmdList.SUBNAUTICA = function(msg)
   msg = msg and msg:lower() or ""
   if msg == "test" then
-    print("Subnautica: playing test sound")
-    PlaySound("oxygen_50.ogg")
+    PlaySound(SOUND_HALF)
     return
   end
-  if msg == "config" or msg == "settings" then
-    OpenConfig()
+  if msg == "test30" then
+    PlaySound(SOUND_30_SECONDS)
     return
   end
-  print("Subnautica: commands: /soa test, /soa config")
+  OpenConfig()
 end
