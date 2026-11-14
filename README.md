@@ -27,9 +27,7 @@ World of Warcraft addon that plays oxygen warning sounds while underwater.
 - Options: Game Menu > Options > AddOns > Subnautica Oxygen Alerts, or `/soa`.
 
 ### Slash Commands
-- `/soa` (or any unknown argument) - Open the options panel.
-- `/soa test` - Play the 50% sound.
-- `/soa test30` - Play the 30 seconds sound.
+- `/soa` - Open the options panel.
 
 ## Configuration
 The options panel holds alert volume, sound channel and the two sound test

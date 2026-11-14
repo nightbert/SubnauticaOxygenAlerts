@@ -637,15 +637,6 @@ frame:SetScript("OnEvent", function(_, event, ...)
 end)
 
 SLASH_SUBNAUTICA1 = "/soa"
-SlashCmdList.SUBNAUTICA = function(msg)
-  msg = msg and msg:lower() or ""
-  if msg == "test" then
-    PlaySound(SOUND_HALF)
-    return
-  end
-  if msg == "test30" then
-    PlaySound(SOUND_30_SECONDS)
-    return
-  end
+SlashCmdList.SUBNAUTICA = function()
   OpenConfig()
 end

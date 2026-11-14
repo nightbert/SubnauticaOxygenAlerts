@@ -1,6 +1,7 @@
 ## Interface: 16001, 11508, 20505, 50503
 ## Title: Subnautica Oxygen Alerts
 ## Notes: Plays oxygen warning sounds while underwater.
+## IconTexture: Interface/Icons/spell_shadow_demonbreath
 ## Author: Nightbert
 ## Version: 1.2.0
 ## SavedVariables: SubnauticaOxygenAlertsDB

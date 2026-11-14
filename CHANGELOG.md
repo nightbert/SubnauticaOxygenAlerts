@@ -10,10 +10,13 @@
 - Settings now live in a native panel under Game Menu > Options > AddOns
   (Settings API on modern clients, Interface Options on older ones) instead of
   a standalone window. `/soa` opens it.
-- Added sound test buttons for both halfway alerts to the options panel.
+- Added sound test buttons for both halfway alerts to the options panel, and
+  dropped the `/soa test` and `/soa test30` commands in favour of them. `/soa`
+  now only opens the options panel.
 - Default alert channel changed from `SFX` to `Dialog` (existing saved settings
   keep their channel).
-- Removed all chat output; `/soa test` and `/soa test30` only play the sound.
+- Added an addon icon (`spell_shadow_demonbreath`, the water breathing icon).
+- Removed all chat output.
 - Added support for the WoW Forever client (interface 16001), with a fallback
   for the mirror timer count on clients that no longer expose
   `MIRRORTIMER_NUMTIMERS`.
