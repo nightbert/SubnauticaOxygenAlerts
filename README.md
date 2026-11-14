@@ -12,8 +12,12 @@ World of Warcraft addon that plays oxygen warning sounds while underwater.
   each alert sound.
 
 ## Installation
-1) Copy the `SubnauticaOxygenAlerts` folder into your WoW AddOns directory:
-   `/Interface/AddOns/`
+1) Copy the `SubnauticaOxygenAlerts` folder into your WoW AddOns directory,
+   e.g. `World of Warcraft/<flavour>/Interface/AddOns/`:
+   - WoW Forever: `_forever_`
+   - Classic Era: `_classic_era_`
+   - TBC Anniversary: `_anniversary_`
+   - Mists of Pandaria Classic: `_classic_`
 2) Ensure `SubnauticaOxygenAlerts` is enabled on the character select AddOns list.
 3) Reload the UI (`/reload`) if the game is already running.
 
@@ -33,9 +37,31 @@ buttons. The addon never writes to chat.
 Edit `SubnauticaOxygenAlerts.lua` and adjust `PERCENT_THRESHOLDS` if you want different
 timings or sound files.
 
+### Sound Files
+All alerts live in `src/`:
+
+| File | Played at |
+| --- | --- |
+| `oxygen_50.ogg` | 50% of the breath bar, when that is more than 30 seconds |
+| `oxygen_30s.ogg` | 50% of the breath bar, when that is 30 seconds or less |
+| `oxygen_25.ogg` | 25% |
+| `oxygen_10.ogg` | 10% |
+| `oxygen_01.ogg` | 1% |
+
+The 50% / 30 seconds choice is made per dive from the real breath length, so
+extended breath (items, Undead racial) gets the "50%" line and a normal
+60 second bar gets the "30 seconds" line. The cutoff is
+`HALF_SOUND_MIN_SECONDS`.
+
 ## Development Notes
 - The addon listens to `MIRROR_TIMER_START/STOP/PAUSE` for the `BREATH` timer.
-- Remaining oxygen is tracked in milliseconds and updated every 0.1s.
+- Remaining oxygen is updated every 0.1s. Mirror timers report milliseconds;
+  `state.unitsPerSecond` is derived from the reported maximum so a client that
+  reports seconds instead does not shift the thresholds.
+- `MIRRORTIMER_NUMTIMERS` is no longer required - clients without the global
+  fall back to scanning three mirror timers.
+- The options panel registers through `Settings.RegisterCanvasLayoutCategory`
+  where available and falls back to `InterfaceOptions_AddCategory`.
 
 ## Supported Clients
 Interface versions 16001 (WoW Forever), 11508 (Classic Era), 20505 (TBC Anniversary),
